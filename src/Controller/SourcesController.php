@@ -2,6 +2,7 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
+use Cake\ORM\TableRegistry;
 
 /**
  * Sources Controller
@@ -110,6 +111,8 @@ class SourcesController extends AppController
      */
     public function add()
     {
+        $this->FormLocations = TableRegistry::get('FormLocations');
+
         $source = $this->Sources->newEntity();
         if ($this->request->is('post')) {
             $data = $this->request->data;      
@@ -129,6 +132,11 @@ class SourcesController extends AppController
             }
         }
 
+        $formLocations = $this->FormLocations->find('all');
+        $fields        = $this->FormLocations->formLocationFields();
+
+        $this->set('fields', $fields);
+        $this->set('formLocations', $formLocations);
         $this->set('enable_tags_input', true);
         $this->set(compact('source'));
         $this->set('_serialize', ['source']);

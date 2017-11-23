@@ -42,6 +42,9 @@ class SourcesTable extends Table
             'foreignKey' => 'allocation_id',
             'joinType' => 'INNER'
         ]);        
+        $this->hasMany('SourceEmailRecipients', [
+            'foreignKey' => 'source_id'
+        ]);
     }
 
     /**
