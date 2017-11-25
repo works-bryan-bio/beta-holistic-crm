@@ -112,22 +112,53 @@ class SourcesController extends AppController
     public function add()
     {
         $this->FormLocations = TableRegistry::get('FormLocations');
+        $this->SourceEmailRecipients = TableRegistry::get('SourceEmailRecipients');
 
         $source = $this->Sources->newEntity();
         if ($this->request->is('post')) {
-            $data = $this->request->data;      
+            $data = $this->request->data;
             //debug($data);
-            $data['emails'] = str_replace(",", ";", $this->request->data['emails']);             
+            //exit;
+
+            //Save source
             $source = $this->Sources->patchEntity($source, $data);           
-            if ($this->Sources->save($source)) {
+            if ( $new_source = $this->Sources->save($source)) {
+                $data_emails = $data['emails'];
+                $data_fields = $data['fields'];
+
+
+                foreach( $data_fields as $key => $values ){
+                    $a_fields = array();
+                    foreach( $values as $subKey => $subValues ){
+                        $a_fields[] = $subKey;
+                    }
+                    $sources_recipients[$key]['fields'] = implode(",", $a_fields);
+                    $sources_recipients[$key]['emails'] = $data_emails[$key];
+                }
+
+                foreach( $sources_recipients as $key => $values ){
+                    if( trim($values['emails']) != '' ){
+                        $data_recipients = [
+                            'source_id' => $new_source->id,
+                            'form_location_id' => $key,
+                            'emails' => $values['emails'],
+                            'fields' => $values['fields']
+                        ];
+
+                        $sourceEmailRecipients = $this->SourceEmailRecipients->newEntity();
+                        $sourceEmailRecipients = $this->SourceEmailRecipients->patchEntity($sourceEmailRecipients, $data_recipients);
+                        $this->SourceEmailRecipients->save($sourceEmailRecipients);
+                    }                    
+                }
+
                 $this->Flash->success(__('The source has been saved.'));
                 $action = $this->request->data['save'];
                 if( $action == 'save' ){
                     return $this->redirect(['action' => 'index']);
                 }else{
                     return $this->redirect(['action' => 'add']);
-                }                    
-            } else {
+                }  
+            }else{
                 $this->Flash->error(__('The source could not be saved. Please, try again.'));
             }
         }
@@ -151,9 +182,17 @@ class SourcesController extends AppController
      */
     public function edit($id = null)
     {
+        $this->FormLocations = TableRegistry::get('FormLocations');
+        $this->SourceEmailRecipients = TableRegistry::get('SourceEmailRecipients');
+
         $source = $this->Sources->get($id, [
             'contain' => []
         ]);
+
+        $sourceEmailRecipients = $this->SourceEmailRecipients->find('all')
+            ->where(['SourceEmailRecipients.source_id' => $source->id])
+        ;
+
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->data;      
             $data['emails'] = str_replace(",", ";", $this->request->data['emails']);              
@@ -171,7 +210,24 @@ class SourcesController extends AppController
             }
         }
 
-        //$allocations = $this->Sources->Allocations->find('list', ['order' => ['Allocations.sort' => 'ASC']]);
+        $email_fields = array();
+        $emails       = array();
+        foreach($sourceEmailRecipients as $s){
+            $a_fields = explode(",", $s->fields);
+            $email_fields[$s->form_location_id] = $a_fields;
+            $emails[$s->form_location_id] = $s->emails;            
+        }
+
+        $formLocations = $this->FormLocations->find('all');
+        $fields        = $this->FormLocations->formLocationFields();
+
+        $this->set([
+            'email_fields' => $email_fields,
+            'emails' => $emails,
+            'sourceEmailRecipients' => $sourceEmailRecipients,
+            'formLocations' => $formLocations,
+            'fields' => $fields
+        ]);
 
         $this->set('enable_tags_input', true);
         $this->set(compact('source'));

@@ -76,7 +76,15 @@ class FormLocationsTable extends Table
             'source_id' => 'Source',
             'allocation_date' => 'Allocation Date',
             'lead_action' => 'Lead Action',
-            'source_url' => 'Source URL'
+            'followup_date' => 'Followup Date',
+            'followup_action_reminder_date' => 'Followup Action Reminder Date',
+            'followup_notes' => 'Followup Notes',
+            'lead_action' => 'Lead Action',
+            'source_url' => 'Source URL',
+            'best_time_to_call' => 'Best time to call',
+            'room_dimensions' => 'Room Dimensions',
+            'notes' => 'Notes',
+
         ];
 
         return $fields;

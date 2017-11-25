@@ -12,8 +12,8 @@
 }
 .fields-list li{
     display: inline-block;
-    width:140px;
-    margin: 12px;
+    width:230px;
+    margin: 2px;
 }
 </style>
 <section class="content-header">
@@ -55,21 +55,19 @@
                                       <a data-toggle="collapse" data-parent="#accordion" style="color:#ffffff !important;" href="#<?php echo $tabId; ?>"><?php echo $fl->name; ?></a>
                                     </h4>
                                   </div>
-                                  <div id="<?php echo $tabId; ?>" class="panel-collapse collapse in">
+                                  <div id="<?php echo $tabId; ?>" class="panel-collapse collapse out">
                                     <div class="box-body">
-                                      <?php 
-                                        echo "
                                         <div class='form-group'>
-                                            <label for='email' class='col-sm-2 control-label'>" . __('Emails') . "</label>
-                                            <div class='col-sm-6'>";
-                                            echo $this->Form->input('emails', ['class' => 'form-control tags-emails', 'data-role' => 'tagsinput', 'label' => false, 'default' => ' ']);                
-                                        echo " </div></div>";
-                                      ?>
+                                            <label for='email' class='col-sm-2 control-label'>Emails</label>
+                                            <div class="col-sm-6">
+                                                <input name="emails[<?php echo $fl->id; ?>]" type="text" class="form-control tags-emails" data-role="tagsinput" />
+                                            </div>
+                                        </div>                                      
                                         <div class="col-sm-12" style="padding:0px;">
                                             <p class="form-caption">Fields</p>
                                             <ul class="fields-list">
                                                 <?php foreach($fields as $key => $f){ ?>
-                                                    <li><input class="" name="fields[<?php echo $key; ?>]" value="<?php echo $f; ?>" type="checkbox" checked /> <?php echo $f; ?></li>
+                                                    <li><label class="checkbox"><input class="" name="fields[<?php echo $fl->id; ?>][<?php echo $key; ?>]" value="<?php echo $f; ?>" type="checkbox" checked /> <?php echo $f; ?></label></li>
                                                 <?php } ?>
                                             </ul>                                            
                                         </div>
