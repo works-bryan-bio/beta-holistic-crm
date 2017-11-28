@@ -194,10 +194,38 @@ class SourcesController extends AppController
         ;
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $data = $this->request->data;      
-            $data['emails'] = str_replace(",", ";", $this->request->data['emails']);              
+            $data = $this->request->data;                  
             $source = $this->Sources->patchEntity($source, $data);
-            if ($this->Sources->save($source)) {
+            if ($this->Sources->save($source)) {                
+                $this->SourceEmailRecipients->deleteAll(['SourceEmailRecipients.source_id' => $source->id]);                
+
+                $data_emails = $data['emails'];
+                $data_fields = $data['fields'];
+
+                foreach( $data_fields as $key => $values ){
+                    $a_fields = array();
+                    foreach( $values as $subKey => $subValues ){
+                        $a_fields[] = $subKey;
+                    }
+                    $sources_recipients[$key]['fields'] = implode(",", $a_fields);
+                    $sources_recipients[$key]['emails'] = $data_emails[$key];
+                }
+
+                foreach( $sources_recipients as $key => $values ){
+                    if( trim($values['emails']) != '' ){
+                        $data_recipients = [
+                            'source_id' => $source->id,
+                            'form_location_id' => $key,
+                            'emails' => $values['emails'],
+                            'fields' => $values['fields']
+                        ];
+
+                        $sourceEmailRecipients = $this->SourceEmailRecipients->newEntity();
+                        $sourceEmailRecipients = $this->SourceEmailRecipients->patchEntity($sourceEmailRecipients, $data_recipients);
+                        $this->SourceEmailRecipients->save($sourceEmailRecipients);
+                    }                    
+                }
+
                 $this->Flash->success(__('The source has been saved.'));
                 $action = $this->request->data['save'];
                 if( $action == 'save' ){
