@@ -132,7 +132,7 @@ class BetaExternalRequestsController extends AppController
      *
      * @return void Redirects on successful add, renders view otherwise.
      */
-    public function ajax_post_register_leads()
+    /*public function ajax_post_register_leads()
     {      
       $this->SourceUsers = TableRegistry::get('SourceUsers');
 
@@ -225,6 +225,124 @@ class BetaExternalRequestsController extends AppController
       $this->viewBuilder()->layout('');     
       echo json_encode($json);
       exit;
-    } 
+    }*/ 
+
+    public function ajax_post_register_leads()
+    {      
+      $this->SourceUsers = TableRegistry::get('SourceUsers');
+      $this->SourceEmailRecipients = TableRegistry::get('SourceEmailRecipients');         
+
+      $data = $this->request->data;
+      $json['is_success'] = false;      
+
+      if( $data ){
+        $lead = $this->Leads->newEntity();
+
+        $lead_action = "";
+        if( isset($data['lead-action']) ){
+          $lead_action = $data['lead-action'];
+        }
+
+        $source_url = "";
+        if( isset($data['lead-url']) ){
+          $source_url = $data['lead-url'];
+        }
+
+        $data_leads = [
+          'firstname' => $data['lead-firstname'],
+          'surname' => $data['lead-lastname'],
+          'email' => $data['lead-email'],
+          'phone' => $data['lead-phone'],
+          'city' => $data['lead-city'],
+          'state' => $data['lead-state'],
+          'source_id' => $data['lead-source-id'],
+          'lead_action' => $lead_action,
+          'status_id' => 2,
+          'lead_type_id' => 1,
+          'source_url' => $source_url,
+          'interest_type_id' => 6,          
+          'allocation_date' => date("Y-m-d"),
+          'followup_date' => date("Y-m-d"),
+          'followup_action_reminder_date' => date("Y-m-d")
+        ];
+        $lead = $this->Leads->patchEntity($lead, $data_leads);        
+        if ($new_lead = $this->Leads->save($lead)) {
+
+            $source_users = $this->SourceUsers->find('all')
+                ->contain(['Users'])
+                ->where(['SourceUsers.source_id' => $data['lead-source-id']])
+            ;
+
+            $users_email = array();
+            foreach($source_users as $users){            
+                $users_email[$users->user->email] = $users->user->email;            
+            }    
+
+            //add other emails to be sent - start
+              foreach($source_users as $users){            
+                  $other_email_to_explode = $users->user->other_email;
+
+                  if( !empty($other_email_to_explode) || $other_email_to_explode != '' ) {
+
+                    $other_email = explode(";", $other_email_to_explode);
+
+                    foreach($other_email as $oekey => $em) {
+
+                      if (trim($em) != '') {
+                          $other_email_to_add = $em; //ltrim($em);
+                          $users_email[$other_email_to_add] = $other_email_to_add;  
+                      }
+
+                    }
+                    
+                  }
+              }    
+            //add other emails to be sent - end                   
+
+            if( !empty($users_email) ){
+              //Send email notification
+              $leadData = $this->Leads->get($new_lead->id, [
+                  'contain' => ['Statuses', 'Sources', 'LeadTypes','InterestTypes']
+              ]);  
+
+              $source_email_recipients = $this->SourceEmailRecipients->find('all')
+                  ->where([
+                            'SourceEmailRecipients.source_id' => $data['lead-source-id'],
+                            'SourceEmailRecipients.form_location_id' => $data['lead-form-location-id'],
+                          ])
+                  ->first()
+              ;
+              $fields = explode(",", $source_email_recipients->fields);
+
+              if($fields) {
+                $email_customer = new Email('default'); //default or cake_smtp (for testing in local)
+                $email_customer->from(['websystem@holisticwebpresencecrm.com' => 'Holistic'])
+                  ->template('external_leads_registration2')
+                  ->emailFormat('html')          
+                  ->cc($users_email)                                                                                               
+                  ->subject('New Lead')
+                  ->viewVars(['new_lead' => $leadData->toArray(), 'fields' => $fields])
+                  ->send();
+              } else {
+                $email_customer = new Email('default'); //default or cake_smtp (for testing in local)
+                $email_customer->from(['websystem@holisticwebpresencecrm.com' => 'Holistic'])
+                  ->template('external_leads_registration')
+                  ->emailFormat('html')          
+                  ->cc($users_email)                                                                                               
+                  ->subject('New Lead')
+                  ->viewVars(['new_lead' => $leadData->toArray()])
+                  ->send();
+              }
+
+            }
+            
+          $json['is_success'] = true;
+        } 
+      }
+
+      $this->viewBuilder()->layout('');     
+      echo json_encode($json);
+      exit;
+    }     
        
 }
