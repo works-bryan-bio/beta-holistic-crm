@@ -265,6 +265,7 @@ class BetaExternalRequestsController extends AppController
           'followup_date' => date("Y-m-d"),
           'followup_action_reminder_date' => date("Y-m-d")
         ];
+        
         $lead = $this->Leads->patchEntity($lead, $data_leads);        
         if ($new_lead = $this->Leads->save($lead)) {
 
@@ -312,16 +313,16 @@ class BetaExternalRequestsController extends AppController
                           ])
                   ->first()
               ;
-              $fields = explode(",", $source_email_recipients->fields);
+              $fields_data = explode(",", $source_email_recipients->fields);
 
-              if($fields) {
+              if($fields_data) {
                 $email_customer = new Email('default'); //default or cake_smtp (for testing in local)
                 $email_customer->from(['websystem@holisticwebpresencecrm.com' => 'Holistic'])
                   ->template('external_leads_registration2')
                   ->emailFormat('html')          
                   ->cc($users_email)                                                                                               
                   ->subject('New Lead')
-                  ->viewVars(['new_lead' => $leadData->toArray(), 'fields' => $fields])
+                  ->viewVars(['new_lead' => $leadData->toArray(), 'fields_data' => $fields_data])
                   ->send();
               } else {
                 $email_customer = new Email('default'); //default or cake_smtp (for testing in local)
